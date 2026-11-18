@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="엑사원">
+<title>엑사원 채팅</title>
+<style>
+  :root{
+    --bg:#f6f5f3; --card:#ffffff; --ink:#1d1d1f; --sub:#6e6e73; --line:#e5e3df;
+    --accent:#a50034; --accent-soft:#fbe9ee; --user:#a50034; --err:#c62828; --err-soft:#fdecea;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#141414; --card:#1f1f21; --ink:#f2f2f2; --sub:#a0a0a5; --line:#2e2e31;
+      --accent:#ff5a7e; --accent-soft:#3a1c24; --user:#b3134a; --err:#ff8a80; --err-soft:#3b1f1f;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;
+    background:var(--bg); color:var(--ink);
+    display:flex; flex-direction:column; height:100vh; height:100dvh;
+    -webkit-text-size-adjust:100%;
+  }
+  button{font:inherit;color:inherit;cursor:pointer}
+  header{
+    display:flex; align-items:center; gap:6px;
+    padding:calc(env(safe-area-inset-top) + 8px) 10px 8px 16px;
+    background:var(--card); border-bottom:1px solid var(--line);
+  }
+  header h1{font-size:17px; margin:0; font-weight:700; letter-spacing:-.2px}
+  header .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);margin-right:6px;flex:none}
+  .spacer{flex:1}
+  .badge{font-size:12px;color:var(--sub);background:var(--bg);border:1px solid var(--line);padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .badge.warn{color:var(--err);border-color:var(--err)}
+  .icon-btn{width:40px;height:40px;border-radius:12px;border:0;background:transparent;display:grid;place-items:center}
+  .icon-btn:active{background:var(--bg)}
+  .icon-btn svg{width:22px;height:22px}
+
+  main{flex:1; overflow-y:auto; padding:16px 12px 8px; -webkit-overflow-scrolling:touch}
+  .empty{max-width:420px;margin:12vh auto 0;text-align:center;color:var(--sub)}
+  .empty h2{color:var(--ink);font-size:20px;margin:0 0 6px}
+  .empty p{margin:0 0 18px;font-size:14px}
+  .chips{display:flex;flex-direction:column;gap:8px}
+  .chip{border:1px solid var(--line);background:var(--card);border-radius:14px;padding:11px 14px;text-align:left;font-size:14.5px}
+  .chip:active{background:var(--accent-soft)}
+
+  .msg{display:flex;margin:0 0 14px}
+  .msg.user{justify-content:flex-end}
+  .bubble{max-width:86%;padding:10px 14px;border-radius:18px;line-height:1.65;font-size:15.5px;overflow-wrap:anywhere;word-break:keep-all}
+  .user .bubble{background:var(--user);color:#fff;border-bottom-right-radius:6px;white-space:pre-wrap}
+  .assistant .bubble{background:var(--card);border:1px solid var(--line);border-bottom-left-radius:6px;max-width:100%;width:100%}
+  .error .bubble{background:var(--err-soft);color:var(--err);border:1px solid var(--err);max-width:100%;width:100%;font-size:14.5px}
+  .bubble p{margin:0 0 .6em} .bubble p:last-child{margin-bottom:0}
+  .bubble ul,.bubble ol{margin:.2em 0 .6em;padding-left:1.3em}
+  .bubble li{margin:.15em 0}
+  .bubble h3,.bubble h4,.bubble h5,.bubble h6{margin:.8em 0 .3em;font-size:1.02em}
+  .bubble code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;background:var(--bg);padding:.1em .35em;border-radius:5px}
+  .bubble pre{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;overflow-x:auto;margin:.4em 0 .7em}
+  .bubble pre code{background:none;padding:0;font-size:.85em;white-space:pre}
+  .bubble blockquote{margin:.3em 0 .6em;padding:.1em .8em;border-left:3px solid var(--accent);color:var(--sub)}
+  .bubble hr{border:0;border-top:1px solid var(--line);margin:.8em 0}
+  .bubble a{color:var(--accent)}
+  .tbl{overflow-x:auto;margin:.4em 0 .7em}
+  .bubble table{border-collapse:collapse;font-size:.92em;min-width:100%}
+  .bubble th,.bubble td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+  .bubble th{background:var(--bg)}
+  details.think{margin:0 0 8px;border:1px dashed var(--line);border-radius:10px;padding:6px 10px;font-size:13.5px;color:var(--sub)}
+  details.think summary{cursor:pointer;font-weight:600;list-style:none}
+  details.think summary::-webkit-details-marker{display:none}
+  details.think summary::before{content:"▸ ";}
+  details.think[open] summary::before{content:"▾ ";}
+  details.think .tbody{margin-top:6px;max-height:260px;overflow-y:auto;line-height:1.55}
+  .actions{display:flex;gap:6px;margin-top:8px}
+  .mini{border:1px solid var(--line);background:transparent;border-radius:8px;padding:3px 10px;font-size:12.5px;color:var(--sub)}
+  .mini:active{background:var(--bg)}
+  .typing{display:inline-flex;gap:4px;padding:4px 0}
+  .typing i{width:7px;height:7px;border-radius:50%;background:var(--sub);opacity:.4;animation:blink 1.2s infinite}
+  .typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+  .status{font-size:12.5px;color:var(--sub);margin-left:8px}
+
+  footer{
+    display:flex; gap:8px; align-items:flex-end;
+    padding:8px 10px calc(env(safe-area-inset-bottom) + 8px);
+    background:var(--card); border-top:1px solid var(--line);
+  }
+  #input{
+    flex:1; resize:none; border:1px solid var(--line); border-radius:21px;
+    padding:10px 15px; font:inherit; font-size:16px; line-height:1.4;
+    max-height:160px; background:var(--bg); color:var(--ink); outline:none;
+  }
+  #input:focus{border-color:var(--accent)}
+  .send{width:44px;height:44px;border-radius:50%;border:0;background:var(--accent);color:#fff;display:grid;place-items:center;flex:none}
+  .send:disabled{opacity:.4}
+  .send svg{width:20px;height:20px}
+
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.42);display:none;align-items:flex-end;justify-content:center;z-index:10}
+  .overlay.open{display:flex}
+  .sheet{
+    background:var(--card); width:100%; max-width:560px; max-height:92vh; overflow-y:auto;
+    border-radius:20px 20px 0 0; padding:18px 18px calc(env(safe-area-inset-bottom) + 18px);
+  }
+  @media (min-width:600px){.overlay{align-items:center}.sheet{border-radius:20px}}
+  .sheet h2{margin:0 0 14px;font-size:18px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13.5px;font-weight:600;margin-bottom:5px}
+  .field .hint{font-size:12.5px;color:var(--sub);margin-top:4px;line-height:1.45}
+  .field input[type=text],.field input[type=password],.field select,.field textarea{
+    width:100%; border:1px solid var(--line); border-radius:11px; padding:10px 12px;
+    font:inherit; font-size:16px; background:var(--bg); color:var(--ink); outline:none;
+  }
+  .field textarea{resize:vertical;min-height:70px}
+  .row{display:flex;gap:8px;align-items:center}
+  .row input{flex:1}
+  .check{display:flex;align-items:center;gap:8px;font-size:14.5px}
+  .check input{width:20px;height:20px;accent-color:var(--accent)}
+  .btns{display:flex;gap:8px;margin-top:6px}
+  .btn{flex:1;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:12px;font-weight:600}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.danger{color:var(--err)}
+  .confirm{display:none;margin-top:10px;padding:10px 12px;border:1px solid var(--err);border-radius:12px;font-size:14px}
+  .confirm.show{display:block}
+  .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translateX(-50%);background:var(--ink);color:var(--card);padding:8px 14px;border-radius:999px;font-size:13.5px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
+  .toast.show{opacity:.92}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="dot"></span>
+  <h1>엑사원</h1>
+  <span class="spacer"></span>
+  <span class="badge" id="usage">오늘 0/100</span>
+  <button class="icon-btn" id="newBtn" aria-label="새 대화" title="새 대화">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+  <button class="icon-btn" id="setBtn" aria-label="설정" title="설정">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </button>
+</header>
+
+<main id="chat"></main>
+
+<footer>
+  <textarea id="input" rows="1" placeholder="메시지를 입력하세요"></textarea>
+  <button class="send" id="sendBtn" aria-label="보내기">
+    <svg id="icoSend" viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg>
+    <svg id="icoStop" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+  </button>
+</footer>
+
+<div class="overlay" id="overlay">
+  <div class="sheet" role="dialog" aria-label="설정">
+    <h2>설정</h2>
+    <div class="field">
+      <label for="fKey">API 키</label>
+      <div class="row">
+        <input type="password" id="fKey" autocomplete="off" placeholder="docs.exaone.ai에서 발급받은 키">
+        <button class="mini" id="showKey" type="button">보기</button>
+      </div>
+      <div class="hint">키는 이 기기의 브라우저에만 저장돼요. 무료 키는 30일마다 새로 받아야 합니다.</div>
+    </div>
+    <div class="field">
+      <label for="fEffort">추론 강도</label>
+      <select id="fEffort">
+        <option value="">기본 (서버 기본값, max)</option>
+        <option value="low">low · 빠름</option>
+        <option value="high">high</option>
+        <option value="max">max · 가장 꼼꼼함</option>
+      </select>
+      <div class="hint">기본이 아닌 값을 골랐는데 오류가 나면 '기본'으로 되돌려 주세요.</div>
+    </div>
+    <div class="field">
+      <label for="fSystem">시스템 지시문 (선택)</label>
+      <textarea id="fSystem" placeholder="예: 너는 초등학교 5학년 담임교사를 돕는 조수야. 쉽고 따뜻한 말투로 답해 줘."></textarea>
+    </div>
+    <div class="field">
+      <label class="check"><input type="checkbox" id="fStream"> 답변을 실시간으로 받기 (스트리밍)</label>
+    </div>
+    <div class="field">
+      <label for="fModel">모델명</label>
+      <input type="text" id="fModel" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="fBase">API 주소</label>
+      <input type="text" id="fBase" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="fLimit">하루 사용 한도 (표시용)</label>
+      <input type="text" id="fLimit" inputmode="numeric" autocomplete="off">
+    </div>
+    <div class="btns">
+      <button class="btn" id="cancelBtn" type="button">닫기</button>
+      <button class="btn primary" id="saveBtn" type="button">저장</button>
+    </div>
+    <div class="btns" style="margin-top:14px">
+      <button class="btn danger" id="clearBtn" type="button">대화 기록 모두 지우기</button>
+    </div>
+    <div class="confirm" id="confirmBox">
+      정말 지울까요? 되돌릴 수 없어요.
+      <div class="btns" style="margin-top:8px">
+        <button class="btn" id="noClear" type="button">취소</button>
+        <button class="btn danger" id="yesClear" type="button">지우기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- 저장소 (실패해도 동작하도록) ---------- */
+  var mem = {};
+  function load(k, d){
+    try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }
+    catch(e){ return k in mem ? mem[k] : d; }
+  }
+  function save(k, v){
+    mem[k] = v;
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){}
+  }
+
+  var DEFAULTS = {
+    key: "", model: "k-exaone_v2.5", base: "https://api.exaone.ai/v1",
+    effort: "", system: "", stream: true, limit: 100
+  };
+  var settings = Object.assign({}, DEFAULTS, load("exa.settings", {}));
+  var messages = load("exa.messages", []);
+  var usage = load("exa.usage", {date:"", count:0});
+
+  var $ = function(id){ return document.getElementById(id); };
+  var chat = $("chat"), input = $("input"), sendBtn = $("sendBtn");
+  var controller = null, busy = false;
+
+  /* ---------- 사용량 ---------- */
+  function today(){
+    var d = new Date();
+    return d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate();
+  }
+  function renderUsage(){
+    if (usage.date !== today()) usage = {date: today(), count: 0};
+    var lim = Number(settings.limit) || 100;
+    var b = $("usage");
+    b.textContent = "오늘 " + usage.count + "/" + lim;
+    b.className = "badge" + (usage.count >= lim * 0.9 ? " warn" : "");
+  }
+  function addUsage(){
+    if (usage.date !== today()) usage = {date: today(), count: 0};
+    usage.count++; save("exa.usage", usage); renderUsage();
+  }
+
+  /* ---------- 마크다운 ---------- */
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function inline(s){
+    s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+    s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    return s;
+  }
+  function md(src){
+    var lines = String(src).replace(/\r/g, "").split("\n");
+    var out = [], para = [], list = null, i = 0, m;
+    function flushPara(){
+      if (para.length){
+        out.push("<p>" + para.map(function(l){ return inline(esc(l)); }).join("<br>") + "</p>");
+        para = [];
+      }
+    }
+    function closeList(){ if (list){ out.push("</" + list + ">"); list = null; } }
+    function cells(l){
+      return l.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map(function(c){ return inline(esc(c.trim())); });
+    }
+    while (i < lines.length){
+      var line = lines[i];
+      if (/^\s*```/.test(line)){
+        flushPara(); closeList();
+        var buf = []; i++;
+        while (i < lines.length && !/^\s*```/.test(lines[i])){ buf.push(lines[i]); i++; }
+        i++;
+        out.push("<pre><code>" + esc(buf.join("\n")) + "</code></pre>");
+        continue;
+      }
+      if (/^\s*\|.*\|\s*$/.test(line) && i + 1 < lines.length && /^\s*\|?\s*:?-{2,}/.test(lines[i+1])){
+        flushPara(); closeList();
+        var head = cells(line), body = [];
+        i += 2;
+        while (i < lines.length && /^\s*\|/.test(lines[i])){ body.push(cells(lines[i])); i++; }
+        out.push('<div class="tbl"><table><thead><tr>' +
+          head.map(function(c){ return "<th>" + c + "</th>"; }).join("") +
+          "</tr></thead><tbody>" +
+          body.map(function(r){ return "<tr>" + r.map(function(c){ return "<td>" + c + "</td>"; }).join("") + "</tr>"; }).join("") +
+          "</tbody></table></div>");
+        continue;
+      }
+      if ((m = line.match(/^(#{1,6})\s+(.*)/))){
+        flushPara(); closeList();
+        var lv = Math.min(m[1].length + 2, 6);
+        out.push("<h" + lv + ">" + inline(esc(m[2])) + "</h" + lv + ">");
+      } else if (/^\s*(---+|\*\*\*+)\s*$/.test(line)){
+        flushPara(); closeList(); out.push("<hr>");
+      } else if ((m = line.match(/^\s*[-*•]\s+(.*)/))){
+        flushPara();
+        if (list !== "ul"){ closeList(); out.push("<ul>"); list = "ul"; }
+        out.push("<li>" + inline(esc(m[1])) + "</li>");
+      } else if ((m = line.match(/^\s*\d+[.)]\s+(.*)/))){
+        flushPara();
+        if (list !== "ol"){ closeList(); out.push("<ol>"); list = "ol"; }
+        out.push("<li>" + inline(esc(m[1])) + "</li>");
+      } else if ((m = line.match(/^\s*>\s?(.*)/))){
+        flushPara(); closeList();
+        out.push("<blockquote>" + inline(esc(m[1])) + "</blockquote>");
+      } else if (/^\s*$/.test(line)){
+        flushPara(); closeList();
+      } else {
+        closeList(); para.push(line);
+      }
+      i++;
+    }
+    flushPara(); closeList();
+    return out.join("");
+  }
+
+  /* 본문 앞에 <think>/<thought> 블록이 섞여 오면 분리 */
+  function splitThink(c){
+    var mm = String(c || "").match(/^\s*<(think|thought)>([\s\S]*?)(<\/\1>|$)/);
+    if (!mm) return {r: "", c: c || ""};
+    return {r: mm[2], c: mm[3] ? c.slice(mm[0].length).replace(/^\s+/, "") : ""};
+  }
+
+  /* ---------- 렌더링 ---------- */
+  var EXAMPLES = [
+    "5학년 학급 규칙 5가지를 아이들 말투로 만들어 줘",
+    "다음 주 현장체험학습 학부모 안내문 초안 써 줘",
+    "분수의 나눗셈을 재미있게 설명하는 수업 활동 3가지 알려 줘"
+  ];
+
+  function renderEmpty(){
+    var wrap = document.createElement("div");
+    wrap.className = "empty";
+    wrap.innerHTML = "<h2>무엇을 도와드릴까요?</h2><p>K-엑사원 2.5와 대화해 보세요.</p>";
+    var chips = document.createElement("div");
+    chips.className = "chips";
+    EXAMPLES.forEach(function(t){
+      var b = document.createElement("button");
+      b.className = "chip"; b.type = "button"; b.textContent = t;
+      b.onclick = function(){ input.value = t; autosize(); input.focus(); };
+      chips.appendChild(b);
+    });
+    wrap.appendChild(chips);
+    chat.appendChild(wrap);
+  }
+
+  function bubbleHTML(msg, streaming){
+    if (msg.role === "user") return esc(msg.content);
+    if (msg.role === "error"){
+      return esc(msg.content) + '<div class="actions"><button class="mini" data-act="retry" type="button">다시 시도</button></div>';
+    }
+    var sp = splitThink(msg.content);
+    var reasoning = (msg.reasoning || "") + (sp.r || "");
+    var html = "";
+    if (reasoning.trim()){
+      html += '<details class="think"' + (streaming && !sp.c ? " open" : "") + '><summary>생각 과정</summary><div class="tbody">' + md(reasoning) + "</div></details>";
+    }
+    if (sp.c) html += md(sp.c);
+    else if (streaming) html += '<span class="typing"><i></i><i></i><i></i></span>' + (reasoning.trim() ? '<span class="status">생각하는 중…</span>' : "");
+    if (!streaming && sp.c){
+      html += '<div class="actions"><button class="mini" data-act="copy" type="button">복사</button></div>';
+    }
+    return html;
+  }
+
+  function makeRow(msg, idx, streaming){
+    var row = document.createElement("div");
+    row.className = "msg " + msg.role;
+    row.dataset.idx = idx;
+    var b = document.createElement("div");
+    b.className = "bubble";
+    b.innerHTML = bubbleHTML(msg, streaming);
+    row.appendChild(b);
+    return row;
+  }
+
+  function renderAll(){
+    chat.innerHTML = "";
+    if (!messages.length){ renderEmpty(); return; }
+    messages.forEach(function(m, i){ chat.appendChild(makeRow(m, i, false)); });
+    scrollDown(true);
+  }
+
+  function nearBottom(){ return chat.scrollHeight - chat.scrollTop - chat.clientHeight < 120; }
+  function scrollDown(force){ if (force || nearBottom()) chat.scrollTop = chat.scrollHeight; }
+
+  var rafPending = false;
+  function updateLast(streaming){
+    if (rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(function(){
+      rafPending = false;
+      streaming = busy;
+      var idx = messages.length - 1;
+      if (idx < 0 || messages[idx].role !== "assistant") return;
+      var row = chat.querySelector('.msg[data-idx="' + idx + '"]');
+      var stick = nearBottom();
+      if (!row){ row = makeRow(messages[idx], idx, streaming); chat.appendChild(row); }
+      else {
+        var b = row.querySelector(".bubble");
+        var det = b.querySelector("details.think");
+        var wasOpen = det ? det.open : null;
+        b.innerHTML = bubbleHTML(messages[idx], streaming);
+        var det2 = b.querySelector("details.think");
+        if (det2 && wasOpen !== null) det2.open = wasOpen;
+      }
+      if (stick) chat.scrollTop = chat.scrollHeight;
+    });
+  }
+
+  function persist(){ save("exa.messages", messages); }
+
+  /* ---------- 클릭 처리 (복사 / 다시 시도) ---------- */
+  chat.addEventListener("click", function(e){
+    var btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    var row = btn.closest(".msg");
+    var idx = Number(row.dataset.idx);
+    if (btn.dataset.act === "copy"){
+      var text = splitThink(messages[idx].content).c;
+      copyText(text);
+    } else if (btn.dataset.act === "retry"){
+      if (busy) return;
+      while (messages.length && messages[messages.length-1].role === "error") messages.pop();
+      persist(); renderAll(); request();
+    }
+  });
+
+  function copyText(text){
+    function fallback(){
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch(e){}
+      document.body.removeChild(ta);
+      toast(ok ? "복사했어요" : "복사하지 못했어요. 길게 눌러 직접 복사해 주세요");
+    }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){ toast("복사했어요"); }, fallback);
+      } else fallback();
+    } catch(e){ fallback(); }
+  }
+
+  var toastTimer = null;
+  function toast(t){
+    var el = $("toast"); el.textContent = t; el.classList.add("show");
+    clearTimeout(toastTimer); toastTimer = setTimeout(function(){ el.classList.remove("show"); }, 1800);
+  }
+
+  /* ---------- 전송 ---------- */
+  function setBusy(v){
+    busy = v;
+    $("icoSend").style.display = v ? "none" : "";
+    $("icoStop").style.display = v ? "" : "none";
+    sendBtn.setAttribute("aria-label", v ? "멈추기" : "보내기");
+  }
+
+  function sendMessage(){
+    if (busy){ if (controller) controller.abort(); return; }
+    var text = input.value.trim();
+    if (!text) return;
+    if (!settings.key){ openSettings(); toast("먼저 API 키를 넣어 주세요"); return; }
+    if (!messages.length) chat.innerHTML = "";
+    messages.push({role: "user", content: text});
+    persist();
+    chat.appendChild(makeRow(messages[messages.length-1], messages.length-1, false));
+    input.value = ""; autosize();
+    scrollDown(true);
+    request();
+  }
+
+  function buildPayload(){
+    var msgs = [];
+    if (settings.system.trim()) msgs.push({role: "system", content: settings.system.trim()});
+    messages.forEach(function(m){
+      if (m.role === "user") msgs.push({role: "user", content: m.content});
+      else if (m.role === "assistant"){
+        var c = splitThink(m.content).c;
+        if (c.trim()) msgs.push({role: "assistant", content: c});
+      }
+    });
+    var p = {model: settings.model.trim() || DEFAULTS.model, messages: msgs, stream: !!settings.stream};
+    if (settings.effort) p.reasoning_effort = settings.effort;
+    return p;
+  }
+
+  function friendlyError(status, bodyText){
+    var detail = "";
+    try {
+      var j = JSON.parse(bodyText);
+      detail = (j.error && (j.error.message || j.error)) || j.message || j.detail || "";
+      if (typeof detail !== "string") detail = JSON.stringify(detail);
+    } catch(e){ detail = (bodyText || "").slice(0, 300); }
+    var head;
+    if (status === 401 || status === 403) head = "API 키가 맞지 않거나 만료됐어요. 설정에서 키를 확인해 주세요.";
+    else if (status === 429) head = "사용 한도에 걸렸어요. 잠시 뒤에 다시 시도하거나 내일 이용해 주세요.";
+    else if (status === 400) head = "요청 형식 오류예요. 설정의 추론 강도를 '기본'으로 바꾸고 다시 시도해 보세요.";
+    else if (status === 404) head = "주소나 모델명을 찾을 수 없어요. 설정의 API 주소와 모델명을 확인해 주세요.";
+    else if (status >= 500) head = "엑사원 서버에 문제가 있어요. 잠시 뒤 다시 시도해 주세요.";
+    else head = "오류가 발생했어요.";
+    return head + " (코드 " + status + ")" + (detail ? "\n" + detail : "");
+  }
+
+  function pushError(text){
+    messages.push({role: "error", content: text});
+    persist();
+    chat.appendChild(makeRow(messages[messages.length-1], messages.length-1, false));
+    scrollDown(true);
+  }
+
+  async function request(){
+    var payload = buildPayload();
+    var url = settings.base.trim().replace(/\/+$/, "") + "/chat/completions";
+    controller = new AbortController();
+    setBusy(true);
+
+    var msg = {role: "assistant", content: "", reasoning: ""};
+    messages.push(msg);
+    var idx = messages.length - 1;
+    chat.appendChild(makeRow(msg, idx, true));
+    scrollDown(true);
+
+    var aborted = false;
+    try {
+      var res = await fetch(url, {
+        method: "POST",
+        headers: {"Content-Type": "application/json", "Authorization": "Bearer " + settings.key.trim()},
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      addUsage();
+      if (!res.ok){
+        var t = await res.text().catch(function(){ return ""; });
+        throw {friendly: friendlyError(res.status, t)};
+      }
+      var ctype = res.headers.get("content-type") || "";
+      if (payload.stream && res.body && ctype.indexOf("json") === -1){
+        var reader = res.body.getReader(), dec = new TextDecoder(), buf = "";
+        while (true){
+          var r = await reader.read();
+          if (r.done) break;
+          buf += dec.decode(r.value, {stream: true});
+          var nl;
+          while ((nl = buf.indexOf("\n")) >= 0){
+            var line = buf.slice(0, nl).trim();
+            buf = buf.slice(nl + 1);
+            handleLine(line, msg);
+          }
+          updateLast(true);
+        }
+        if (buf.trim()) handleLine(buf.trim(), msg);
+      } else {
+        var j = await res.json();
+        if (j.error) throw {friendly: "오류: " + (j.error.message || JSON.stringify(j.error))};
+        var m = (j.choices && j.choices[0] && j.choices[0].message) || {};
+        msg.content = m.content || "";
+        msg.reasoning = m.reasoning_content || m.reasoning || "";
+      }
+    } catch(err){
+      if (err && err.name === "AbortError"){ aborted = true; }
+      else {
+        var text = err && err.friendly ? err.friendly :
+          "연결하지 못했어요. 인터넷 연결을 확인해 주세요.\n계속 이러면 엑사원 서버가 브라우저에서의 직접 호출을 막고 있는 것일 수 있어요(CORS).";
+        if (!msg.content && !msg.reasoning){ messages.splice(idx, 1); removeRow(idx); }
+        pushError(text);
+      }
+    } finally {
+      controller = null;
+      setBusy(false);
+      if (messages[idx] === msg){
+        if (aborted && !msg.content) msg.content = msg.reasoning ? "" : "(멈춤)";
+        if (!msg.content && !msg.reasoning && !aborted) msg.content = "(빈 응답)";
+        if (!msg.reasoning) delete msg.reasoning;
+        persist();
+        var row = chat.querySelector('.msg[data-idx="' + idx + '"]');
+        if (row) row.querySelector(".bubble").innerHTML = bubbleHTML(msg, false);
+        scrollDown(false);
+      }
+    }
+  }
+
+  function removeRow(idx){
+    var row = chat.querySelector('.msg[data-idx="' + idx + '"]');
+    if (row) row.remove();
+  }
+
+  function handleLine(line, msg){
+    if (!line || line.indexOf("data:") !== 0) return;
+    var data = line.slice(5).trim();
+    if (data === "[DONE]") return;
+    var j;
+    try { j = JSON.parse(data); } catch(e){ return; }
+    if (j.error) throw {friendly: "오류: " + (j.error.message || JSON.stringify(j.error))};
+    var ch = j.choices && j.choices[0];
+    if (!ch) return;
+    var d = ch.delta || ch.message || {};
+    if (d.content) msg.content += d.content;
+    var rc = d.reasoning_content || d.reasoning;
+    if (rc) msg.reasoning += rc;
+  }
+
+  /* ---------- 입력창 ---------- */
+  function autosize(){
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 160) + "px";
+  }
+  input.addEventListener("input", autosize);
+  var finePointer = window.matchMedia && window.matchMedia("(pointer: fine)").matches;
+  input.addEventListener("keydown", function(e){
+    if (e.key === "Enter" && !e.isComposing && e.keyCode !== 229){
+      if ((finePointer && !e.shiftKey) || e.ctrlKey || e.metaKey){
+        e.preventDefault(); sendMessage();
+      }
+    }
+  });
+  sendBtn.addEventListener("click", sendMessage);
+
+  $("newBtn").addEventListener("click", function(){
+    if (busy && controller) controller.abort();
+    if (!messages.length) return;
+    messages = []; persist(); renderAll(); toast("새 대화를 시작했어요");
+  });
+
+  /* ---------- 설정 ---------- */
+  function openSettings(){
+    $("fKey").value = settings.key;
+    $("fModel").value = settings.model;
+    $("fBase").value = settings.base;
+    $("fEffort").value = settings.effort;
+    $("fSystem").value = settings.system;
+    $("fStream").checked = !!settings.stream;
+    $("fLimit").value = settings.limit;
+    $("confirmBox").classList.remove("show");
+    $("overlay").classList.add("open");
+  }
+  function closeSettings(){ $("overlay").classList.remove("open"); }
+
+  $("setBtn").addEventListener("click", openSettings);
+  $("cancelBtn").addEventListener("click", closeSettings);
+  $("overlay").addEventListener("click", function(e){ if (e.target === this) closeSettings(); });
+  $("showKey").addEventListener("click", function(){
+    var f = $("fKey"); var show = f.type === "password";
+    f.type = show ? "text" : "password"; this.textContent = show ? "숨기기" : "보기";
+  });
+  $("saveBtn").addEventListener("click", function(){
+    settings.key = $("fKey").value.trim();
+    settings.model = $("fModel").value.trim() || DEFAULTS.model;
+    settings.base = $("fBase").value.trim() || DEFAULTS.base;
+    settings.effort = $("fEffort").value;
+    settings.system = $("fSystem").value;
+    settings.stream = $("fStream").checked;
+    settings.limit = parseInt($("fLimit").value, 10) || 100;
+    save("exa.settings", settings);
+    renderUsage(); closeSettings(); toast("저장했어요");
+  });
+  $("clearBtn").addEventListener("click", function(){ $("confirmBox").classList.add("show"); });
+  $("noClear").addEventListener("click", function(){ $("confirmBox").classList.remove("show"); });
+  $("yesClear").addEventListener("click", function(){
+    if (busy && controller) controller.abort();
+    messages = []; persist(); renderAll(); closeSettings(); toast("대화 기록을 지웠어요");
+  });
+
+  /* ---------- 시작 ---------- */
+  renderUsage();
+  renderAll();
+  if (!settings.key) setTimeout(openSettings, 300);
+})();
+</script>
+</body>
+</html>
