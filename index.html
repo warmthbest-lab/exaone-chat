@@ -86,10 +86,38 @@
   .status{font-size:12.5px;color:var(--sub);margin-left:8px}
 
   footer{
-    display:flex; gap:8px; align-items:flex-end;
-    padding:8px 10px calc(env(safe-area-inset-bottom) + 8px);
+    position:relative;
+    display:flex; flex-direction:column; gap:6px;
+    padding:6px 10px calc(env(safe-area-inset-bottom) + 8px);
     background:var(--card); border-top:1px solid var(--line);
   }
+  .composer{display:flex; gap:8px; align-items:flex-end}
+  .toolbar{display:flex; gap:6px; align-items:center}
+  .chip-btn{
+    display:inline-flex; align-items:center; gap:5px;
+    border:1px solid var(--line); background:var(--bg); border-radius:999px;
+    padding:5px 11px; font-size:13px; color:var(--ink);
+  }
+  .chip-btn:active{background:var(--accent-soft)}
+  .chip-btn .lv{font-weight:700;color:var(--accent)}
+  .chip-btn svg{width:14px;height:14px}
+  .menu{
+    position:absolute; left:10px; bottom:calc(100% + 6px); z-index:15;
+    width:min(300px, calc(100% - 20px));
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    box-shadow:0 8px 28px rgba(0,0,0,.16); padding:6px; display:none;
+  }
+  .menu.open{display:block}
+  .menu .mh{font-size:12.5px;color:var(--sub);padding:6px 10px 4px}
+  .opt{
+    display:flex; align-items:center; gap:10px; width:100%;
+    border:0; background:transparent; text-align:left; padding:10px; border-radius:11px;
+  }
+  .opt:active,.opt:hover{background:var(--bg)}
+  .opt .t{font-size:15px;font-weight:600}
+  .opt .d{font-size:12.5px;color:var(--sub);margin-top:1px}
+  .opt .ck{margin-left:auto;color:var(--accent);font-weight:700;visibility:hidden}
+  .opt.sel .ck{visibility:visible}
   #input{
     flex:1; resize:none; border:1px solid var(--line); border-radius:21px;
     padding:10px 15px; font:inherit; font-size:16px; line-height:1.4;
@@ -148,11 +176,27 @@
 <main id="chat"></main>
 
 <footer>
-  <textarea id="input" rows="1" placeholder="메시지를 입력하세요"></textarea>
-  <button class="send" id="sendBtn" aria-label="보내기">
-    <svg id="icoSend" viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg>
-    <svg id="icoStop" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
-  </button>
+  <div class="menu" id="effortMenu" role="menu" aria-label="추론 강도">
+    <div class="mh">추론 강도</div>
+    <button class="opt" data-v="low" type="button" role="menuitemradio"><span><div class="t">낮음</div><div class="d">빠르게 답해요. 간단한 질문에 좋아요</div></span><span class="ck">✓</span></button>
+    <button class="opt" data-v="high" type="button" role="menuitemradio"><span><div class="t">높음</div><div class="d">적당히 생각하고 답해요</div></span><span class="ck">✓</span></button>
+    <button class="opt" data-v="max" type="button" role="menuitemradio"><span><div class="t">최대</div><div class="d">가장 꼼꼼해요. 대신 느려요</div></span><span class="ck">✓</span></button>
+    <button class="opt" data-v="" type="button" role="menuitemradio"><span><div class="t">기본</div><div class="d">서버 기본값을 따라요 (최대). 오류가 나면 이걸로</div></span><span class="ck">✓</span></button>
+  </div>
+  <div class="toolbar">
+    <button class="chip-btn" id="effortChip" type="button" aria-haspopup="true" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0-3.5 10.9V17h7v-3.1A6 6 0 0 0 12 3z"/><path d="M9.5 21h5"/></svg>
+      추론 <span class="lv" id="effortLabel">기본</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+  </div>
+  <div class="composer">
+    <textarea id="input" rows="1" placeholder="메시지를 입력하세요"></textarea>
+    <button class="send" id="sendBtn" aria-label="보내기">
+      <svg id="icoSend" viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg>
+      <svg id="icoStop" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+    </button>
+  </div>
 </footer>
 
 <div class="overlay" id="overlay">
@@ -165,16 +209,6 @@
         <button class="mini" id="showKey" type="button">보기</button>
       </div>
       <div class="hint">키는 이 기기의 브라우저에만 저장돼요. 무료 키는 30일마다 새로 받아야 합니다.</div>
-    </div>
-    <div class="field">
-      <label for="fEffort">추론 강도</label>
-      <select id="fEffort">
-        <option value="">기본 (서버 기본값, max)</option>
-        <option value="low">low · 빠름</option>
-        <option value="high">high</option>
-        <option value="max">max · 가장 꼼꼼함</option>
-      </select>
-      <div class="hint">기본이 아닌 값을 골랐는데 오류가 나면 '기본'으로 되돌려 주세요.</div>
     </div>
     <div class="field">
       <label for="fSystem">시스템 지시문 (선택)</label>
@@ -515,7 +549,7 @@
     var head;
     if (status === 401 || status === 403) head = "API 키가 맞지 않거나 만료됐어요. 설정에서 키를 확인해 주세요.";
     else if (status === 429) head = "사용 한도에 걸렸어요. 잠시 뒤에 다시 시도하거나 내일 이용해 주세요.";
-    else if (status === 400) head = "요청 형식 오류예요. 설정의 추론 강도를 '기본'으로 바꾸고 다시 시도해 보세요.";
+    else if (status === 400) head = "요청 형식 오류예요. 입력창 위 '추론'을 '기본'으로 바꾸고 다시 시도해 보세요.";
     else if (status === 404) head = "주소나 모델명을 찾을 수 없어요. 설정의 API 주소와 모델명을 확인해 주세요.";
     else if (status >= 500) head = "엑사원 서버에 문제가 있어요. 잠시 뒤 다시 시도해 주세요.";
     else head = "오류가 발생했어요.";
@@ -647,7 +681,6 @@
     $("fKey").value = settings.key;
     $("fModel").value = settings.model;
     $("fBase").value = settings.base;
-    $("fEffort").value = settings.effort;
     $("fSystem").value = settings.system;
     $("fStream").checked = !!settings.stream;
     $("fLimit").value = settings.limit;
@@ -667,7 +700,6 @@
     settings.key = $("fKey").value.trim();
     settings.model = $("fModel").value.trim() || DEFAULTS.model;
     settings.base = $("fBase").value.trim() || DEFAULTS.base;
-    settings.effort = $("fEffort").value;
     settings.system = $("fSystem").value;
     settings.stream = $("fStream").checked;
     settings.limit = parseInt($("fLimit").value, 10) || 100;
@@ -681,7 +713,39 @@
     messages = []; persist(); renderAll(); closeSettings(); toast("대화 기록을 지웠어요");
   });
 
+  /* ---------- 추론 강도 선택 ---------- */
+  var EFFORT_NAMES = {"": "기본", low: "낮음", high: "높음", max: "최대"};
+  var menu = $("effortMenu"), chip = $("effortChip");
+  function renderEffort(){
+    var v = settings.effort || "";
+    $("effortLabel").textContent = EFFORT_NAMES[v] || "기본";
+    menu.querySelectorAll(".opt").forEach(function(o){
+      var on = o.dataset.v === v;
+      o.classList.toggle("sel", on);
+      o.setAttribute("aria-checked", on ? "true" : "false");
+    });
+  }
+  function toggleMenu(open){
+    var willOpen = open === undefined ? !menu.classList.contains("open") : open;
+    menu.classList.toggle("open", willOpen);
+    chip.setAttribute("aria-expanded", willOpen ? "true" : "false");
+  }
+  chip.addEventListener("click", function(e){ e.stopPropagation(); toggleMenu(); });
+  menu.addEventListener("click", function(e){
+    var o = e.target.closest(".opt");
+    if (!o) return;
+    settings.effort = o.dataset.v;
+    save("exa.settings", settings);
+    renderEffort(); toggleMenu(false);
+    toast("추론 강도: " + EFFORT_NAMES[settings.effort]);
+  });
+  document.addEventListener("click", function(e){
+    if (menu.classList.contains("open") && !menu.contains(e.target) && e.target !== chip) toggleMenu(false);
+  });
+  document.addEventListener("keydown", function(e){ if (e.key === "Escape") toggleMenu(false); });
+
   /* ---------- 시작 ---------- */
+  renderEffort();
   renderUsage();
   renderAll();
   if (!settings.key) setTimeout(openSettings, 300);
